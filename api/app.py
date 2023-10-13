@@ -165,6 +165,34 @@ def create_task(user):
         })
     )
 
+@app.route('/api/tasks', methods=['GET'])
+@token_required
+def get_user_tasks(user_id):
+
+    user = User.query.filter_by(id=user_id).first()
+
+    if not user:
+        return make_response(jsonify({'message': 'Usuario no encontrado'}), 404)
+
+    user_tasks = Task.query.filter_by(user_id=user.id).all()
+
+    if not user_tasks:
+        return make_response(jsonify({'message': 'El usuario no tiene tareas de conversión'}), 404)
+
+    tasks_data = []
+    for task in user_tasks:
+        task_info = {
+            'id': task.id,
+            'file_name': task.file_name,
+            'original_extension': task.file_name.split('.')[-1],
+            'new_format': task.new_format,
+            'available': task.status == 'Uploaded'
+        }
+        tasks_data.append(task_info)
+
+    return make_response(jsonify(tasks_data), 200)
+
+
 @app.route('/api/example', methods=['POST'])
 @token_required
 def protected_route_example(usuario):
