@@ -165,7 +165,7 @@ def create_task(user):
         })
     )
 
-@app.route('/api/tasks', methods=['GET'])
+@app.route('/api/users/<int:user_id>/tasks', methods=['GET'])
 @token_required
 def get_user_tasks(user_id):
 

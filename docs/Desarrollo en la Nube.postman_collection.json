@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "07e8974d-ccf7-4ea7-bbe6-020c219a400b",
+		"_postman_id": "f85806fc-4a77-49cc-a217-6739a84ca67e",
 		"name": "Desarrollo en la Nube",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "29550135"
+		"_exporter_id": "20683910"
 	},
 	"item": [
 		{
@@ -124,6 +124,32 @@
 					"path": [
 						"api",
 						"example"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Task for user",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/api/users/:user_id/tasks",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"users",
+						":user_id",
+						"tasks"
+					],
+					"variable": [
+						{
+							"key": "user_id",
+							"value": "1"
+						}
 					]
 				}
 			},
