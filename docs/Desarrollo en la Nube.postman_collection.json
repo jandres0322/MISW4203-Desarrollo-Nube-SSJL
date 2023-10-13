@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "7ee74414-d497-4cb1-b775-c42dddc6c77b",
+		"_postman_id": "07e8974d-ccf7-4ea7-bbe6-020c219a400b",
 		"name": "Desarrollo en la Nube",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "12518840"
+		"_exporter_id": "29550135"
 	},
 	"item": [
 		{
@@ -69,6 +69,43 @@
 						"api",
 						"auth",
 						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create task",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImphbmRyZXMwMzIyIiwicGFzc3dvcmQiOiIxMjM0IiwiZXhwIjoxNjk3MTY0MDMzfQ.9z3x5_Z97xSmVa5pGDPo_s_h4_xxyRBjlNMp8ivsiwY",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"fileName\":\"C:/Users/santi/video.MP4\",\r\n    \"newFormat\":\"AVI\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/api/tasks",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"tasks"
 					]
 				}
 			},
