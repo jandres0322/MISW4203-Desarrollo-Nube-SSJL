@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import User, db
+from models import User, Task, db
 from functools import wraps
 import jwt
 import datetime
@@ -32,7 +32,7 @@ def token_required(f):
             return jsonify({'message' : 'El token no encontrado'}), 401
         print(token)
         try:
-            data = jwt.decode(token, app.config['SECRET_KEY'], ["HS256"])
+            data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms = ["HS256"])
             current_user = User.query\
                 .filter_by(username = data['username'])\
                 .first()
@@ -119,9 +119,55 @@ def register_user():
         201
     )
 
+@app.route('/api/tasks', methods=['POST'])
+@token_required
+def create_task(user):
+    valid_formats = ["MP4", "WEBM", "AVI", "MPEG", "WMV"]
+    data = request.get_json()
+    file_name = data.get('fileName')
+    previous_format = file_name.split(".")[1]
+    new_format = data.get('newFormat').upper()
+    task = Task.query.filter_by(file_name = file_name).first()
+    
+    if task:
+        return make_response(
+            jsonify({
+                'message': 'Ya existe una tarea para este archivo {}'.format(new_format)
+            }),
+            400
+        )
+    
+    if not previous_format in valid_formats:
+        return make_response(
+            jsonify({
+                'message': 'El formato de origen es inválido.'
+            }),
+            400    
+        )       
+
+    if not new_format in valid_formats:
+        return make_response(
+            jsonify({
+                'message': 'El nuevo formato es inválido.'
+            }),
+            400    
+        )
+    task = Task(
+        file_name = file_name,
+        new_format = new_format,
+        user = user
+    )
+    db.session.add(task)
+    db.session.commit()
+    return make_response(
+        jsonify({
+            'message': 'Tarea creada exitosamente!',
+        })
+    )
+
 @app.route('/api/example', methods=['POST'])
 @token_required
-def protected_route_example():
+def protected_route_example(usuario):
     print("==== PROTECTED ROUTE EXAMPLE ==== ")
     return make_response(
         jsonify({
