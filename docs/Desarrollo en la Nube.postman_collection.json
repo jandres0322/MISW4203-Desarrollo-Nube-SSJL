@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "f85806fc-4a77-49cc-a217-6739a84ca67e",
+		"_postman_id": "964cb27d-b374-4ee5-93ad-579b4ce3573a",
 		"name": "Desarrollo en la Nube",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "20683910"
+		"_exporter_id": "28918337"
 	},
 	"item": [
 		{
@@ -42,6 +42,27 @@
 		},
 		{
 			"name": "Login",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const responseData = pm.response.json();",
+							"pm.collectionVariables.set(\"token\", responseData.token);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "POST",
 				"header": [
@@ -82,7 +103,7 @@
 					"bearer": [
 						{
 							"key": "token",
-							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImphbmRyZXMwMzIyIiwicGFzc3dvcmQiOiIxMjM0IiwiZXhwIjoxNjk3MTY0MDMzfQ.9z3x5_Z97xSmVa5pGDPo_s_h4_xxyRBjlNMp8ivsiwY",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImphbmRyZXMwMzIyIiwicGFzc3dvcmQiOiIxMjM0IiwiZXhwIjoxNjk3NTkwMzMzfQ.5VAfpk4tH_IBeJqETFET-YprOENzIyPOP6gx1mlxnUw",
 							"type": "string"
 						}
 					]
@@ -114,6 +135,16 @@
 		{
 			"name": "Protected Route Example",
 			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
 				"method": "POST",
 				"header": [],
 				"url": {
@@ -132,6 +163,16 @@
 		{
 			"name": "Task for user",
 			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImphbmRyZXMwMzIyIiwicGFzc3dvcmQiOiIxMjM0IiwiZXhwIjoxNjk3NTkwODE3fQ.VKjInw-xZVgMaXRIQMs52tG0x9J_Jwao8RcM0WPkZfU",
+							"type": "string"
+						}
+					]
+				},
 				"method": "GET",
 				"header": [],
 				"url": {
@@ -150,6 +191,35 @@
 							"key": "user_id",
 							"value": "1"
 						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Task by id",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/api/task/1",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"task",
+						"1"
 					]
 				}
 			},
@@ -180,6 +250,11 @@
 		{
 			"key": "BASE_URL",
 			"value": "http://localhost:5000",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
 			"type": "string"
 		}
 	]
