@@ -192,6 +192,22 @@ def get_user_tasks(user_id):
 
     return make_response(jsonify(tasks_data), 200)
 
+@app.route('/api/task/<int:task_id>', methods=['GET'])
+@token_required
+def get_task_by_id(usuario, task_id):
+    print(task_id)
+    print(usuario)
+    task = Task.query.filter_by(id=task_id).first()
+    if not task:
+         return make_response(jsonify({'message': 'Tarea no encontrada'}), 404)
+    task_info = {
+            'id': task.id,
+            'file_name': task.file_name,
+            'original_extension': task.file_name.split('.')[-1],
+            'new_format': task.new_format,
+            'available': task.status == 'Uploaded'
+        }
+    return make_response(jsonify(task_info), 200)
 
 @app.route('/api/example', methods=['POST'])
 @token_required
