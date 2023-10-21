@@ -1,18 +1,21 @@
 from flask import Flask, request, jsonify, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from models import User, Task, db
 from functools import wraps
 import jwt
 import datetime
 import os
+from flask_migrate import Migrate
+from utils import allowed_file, create_user_folder
 
-
+UPLOAD_FOLDER = "uploads/videos"
 app = Flask(__name__)
+migrate = Migrate()
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://myuser:mypassword@database:5432/mydatabase'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", "postgresql+psycopg2://test:test@localhost:5432/convert_tool_video")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  
-
-
 app.config['JWT_TIME_EXPIRE'] = int(os.environ.get('JWT_TIME_EXPIRE',1200))
 app.config['JWT_SECRET_KEY'] = os.environ.get("JWT_SECRET_KEY", "JF}]&p1CH4-?-k]")
 
@@ -20,6 +23,7 @@ app_context = app.app_context()
 app_context.push()
 
 db.init_app(app)
+migrate.init_app(app,db)
 db.create_all()
 
 def token_required(f):
@@ -123,47 +127,35 @@ def register_user():
 @app.route('/api/tasks', methods=['POST'])
 @token_required
 def create_task(user):
-    valid_formats = ["MP4", "WEBM", "AVI", "MPEG", "WMV"]
-    data = request.get_json()
-    file_name = data.get('fileName')
-    previous_format = file_name.split(".")[1]
-    new_format = data.get('newFormat').upper()
-    task = Task.query.filter_by(file_name = file_name).first()
-    
-    if task:
-        return make_response(
+    new_format = request.form['new_format']
+    file = request.files['file']
+    if 'file' not in request.files:
+        make_response(
             jsonify({
-                'message': 'Ya existe una tarea para este archivo {}'.format(new_format)
-            }),
-            400
+                'message': 'No se carga el archivo'
+            }), 404
         )
-    
-    if not previous_format in valid_formats:
-        return make_response(
+    if file and allowed_file(file.filename):
+        make_response(
             jsonify({
-                'message': 'El formato de origen es inválido.'
-            }),
-            400    
-        )       
-
-    if not new_format in valid_formats:
-        return make_response(
-            jsonify({
-                'message': 'El nuevo formato es inválido.'
-            }),
-            400    
+                'message': 'El archivo no tiene un formato valido'
+            }), 400
         )
+    filename_secure = secure_filename(file.filename)
+    folder_user  = create_user_folder( app.config['UPLOAD_FOLDER']  ,user.username)
+    filename_path = os.path.join(folder_user, filename_secure) 
+    file.save(filename_path)
     task = Task(
-        file_name = file_name,
-        new_format = new_format,
-        user = user
+        path_file=filename_path,
+        new_format=new_format,
+        user_id=user.id
     )
     db.session.add(task)
     db.session.commit()
     return make_response(
         jsonify({
-            'message': 'Tarea creada exitosamente!',
-        })
+            'message': 'Tarea creada correctamente!'
+        }), 201
     )
 
 @app.route('/api/users/<int:user_id>/tasks', methods=['GET'])
