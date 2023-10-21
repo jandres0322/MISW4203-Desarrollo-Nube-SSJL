@@ -1,4 +1,9 @@
 version: '3'
+
+networks:
+  mynetwork:
+    driver: bridge
+
 services:
   api:
     build:
@@ -9,10 +14,27 @@ services:
     volumes:
       - .:/app
     depends_on:
-      - database 
+      - database
+    networks:
+      - mynetwork
+
   database:
     image: postgres:latest
     environment:
       POSTGRES_DB: mydatabase
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
+    networks:
+      - mynetwork
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: database
+      PMA_PORT: 5432
+    depends_on:
+      - database
+    networks:
+      - mynetwork

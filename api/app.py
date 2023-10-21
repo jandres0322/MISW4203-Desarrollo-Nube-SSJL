@@ -9,8 +9,9 @@ import os
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Database.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://myuser:mypassword@database:5432/mydatabase'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  
+
 
 app.config['JWT_TIME_EXPIRE'] = int(os.environ.get('JWT_TIME_EXPIRE',1200))
 app.config['JWT_SECRET_KEY'] = os.environ.get("JWT_SECRET_KEY", "JF}]&p1CH4-?-k]")
