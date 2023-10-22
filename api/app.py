@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response, url_for, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from models import User, Task, db
@@ -8,6 +8,7 @@ import datetime
 import os
 from flask_migrate import Migrate
 from utils import allowed_file, create_user_folder
+from sqlalchemy import desc, asc
 
 UPLOAD_FOLDER = "uploads/videos"
 app = Flask(__name__)
@@ -144,6 +145,14 @@ def create_task(user):
     filename_secure = secure_filename(file.filename)
     folder_user  = create_user_folder( app.config['UPLOAD_FOLDER']  ,user.username)
     filename_path = os.path.join(folder_user, filename_secure) 
+    task = Task.query.filter_by(path_file = filename_path).first()
+    if task:
+        return make_response(
+            jsonify({
+                'message': 'Ya existe una tarea para este archivo'
+            }),
+            400
+        )
     file.save(filename_path)
     task = Task(
         path_file=filename_path,
@@ -158,59 +167,54 @@ def create_task(user):
         }), 201
     )
 
-@app.route('/api/users/<int:user_id>/tasks', methods=['GET'])
+@app.route('/api/tasks', methods=['GET'])
 @token_required
-def get_user_tasks(user_id):
-
-    user = User.query.filter_by(id=user_id).first()
-
-    if not user:
-        return make_response(jsonify({'message': 'Usuario no encontrado'}), 404)
-
-    user_tasks = Task.query.filter_by(user_id=user.id).all()
-
-    if not user_tasks:
-        return make_response(jsonify({'message': 'El usuario no tiene tareas de conversión'}), 404)
-
-    tasks_data = []
-    for task in user_tasks:
-        task_info = {
+def get_user_tasks(user):
+    max_tasks = request.args.get('max')
+    order = request.args.get('order') 
+    tasks = Task.query \
+                .filter_by(user_id=user.id) \
+                .order_by( asc(Task.id) if order == '0' else desc(Task.id) )
+    if max_tasks:
+        tasks = tasks.limit(max_tasks).all()
+    tasks_list = [
+        {
             'id': task.id,
-            'file_name': task.file_name,
-            'original_extension': task.file_name.split('.')[-1],
+            'path_file': task.path_file,
+            'path_file_new_format': task.path_file_new_format,
+            'original_extension': task.path_file.split('.')[-1],
             'new_format': task.new_format,
-            'available': task.status == 'Uploaded'
-        }
-        tasks_data.append(task_info)
-
-    return make_response(jsonify(tasks_data), 200)
+            'available': task.status == 'Processed'
+        } for task in tasks
+    ]
+    return make_response(
+        jsonify({
+            "length": len(tasks_list),
+            "tasks": tasks_list
+        }), 200
+    )
 
 @app.route('/api/task/<int:task_id>', methods=['GET'])
 @token_required
-def get_task_by_id(usuario, task_id):
+def get_task_by_id(user, task_id):
     task = Task.query.filter_by(id=task_id).first()
     if not task:
          return make_response(jsonify({'message': 'Tarea no encontrada'}), 404)
-    task_info = {
-            'id': task.id,
-            'file_name': task.file_name,
-            'original_extension': task.file_name.split('.')[-1],
-            'new_format': task.new_format,
-            'available': task.status == 'Uploaded'
-        }
-    return make_response(jsonify(task_info), 200)
-
-@app.route('/api/example', methods=['POST'])
-@token_required
-def protected_route_example(usuario):
-    print("==== PROTECTED ROUTE EXAMPLE ==== ")
     return make_response(
         jsonify({
-            "message": "Acceso a ruta protegida"
-        }),
-        200
+            'url_original_file': task.path_file,
+            'url_processed_file': task.path_file_new_format,
+            'status': task.status,
+            'new_format': task.new_format,
+        }), 200
     )
 
+@app.route('/api/tasks/upload', methods=['GET'])
+@token_required
+def download_file(user):
+    path_file_upload = request.args.get('path')
+    path, filename = os.path.split(path_file_upload)
+    return send_from_directory(path, filename)
 
 if __name__ == '__main__':
     app.run(
