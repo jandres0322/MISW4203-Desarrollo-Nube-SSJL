@@ -195,8 +195,6 @@ def get_user_tasks(user_id):
 @app.route('/api/task/<int:task_id>', methods=['GET'])
 @token_required
 def get_task_by_id(usuario, task_id):
-    print(task_id)
-    print(usuario)
     task = Task.query.filter_by(id=task_id).first()
     if not task:
          return make_response(jsonify({'message': 'Tarea no encontrada'}), 404)
