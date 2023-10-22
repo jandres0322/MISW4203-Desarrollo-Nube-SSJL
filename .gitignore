@@ -147,3 +147,9 @@ cython_debug/
 test.db
 
 venv
+
+# PostgreSQL Data
+./data
+
+# Uploads Images
+*/uploads
