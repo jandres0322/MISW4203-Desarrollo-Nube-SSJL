@@ -3,6 +3,7 @@ from models import Task
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import importlib
+import subprocess
 
 @shared_task(name='sync_sqs_logs', bind=True, max_retries=2)
 def sync_sqs_logs(self):
@@ -24,7 +25,7 @@ def sync_sqs_logs(self):
         # Imprime los resultados
         self.async_app = celery_app
         for task in tasks:
-            self.async_app.send_task("upload_task", args=[task.id])
+            self.async_app.send_task("upload_task", args=[task.id, task.path_file, task.new_format])
             print(task.id, task.status)
 
         # Cierra la sesión
@@ -34,8 +35,11 @@ def sync_sqs_logs(self):
         raise self.retry(exc=e)
 
 @shared_task(name="upload_task")
-def upload_task(task_id):
-    # Actualizar a la base de datos
-    print(task_id)
-    task= task_id
-    return task
+def upload_task(id, path_file, new_format):
+    path = "batch/convert_video.sh"
+    new_path =  f'{path_file.split(".")[0]}.{new_format}'
+    arg = f'${path}/{new_path}'
+    print("proceso batch")
+    subprocess.Popen(["sh", f'{path} {arg}'   ], shell=True)
+    # subprocess.call(f'{path} {path_file} {new_path}')    
+    return id

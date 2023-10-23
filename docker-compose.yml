@@ -26,6 +26,16 @@ services:
     networks:
       - mynetwork
 
+  celery:
+    container_name: celery
+    volumes:
+      - .:/api
+    command: celery -A workers.celery worker --loglevel=info -B
+    build: 
+      context: ./api
+    networks:
+      - mynetwork
+
   api:
     container_name: api
     volumes:
@@ -34,7 +44,6 @@ services:
       - "5000:5000"
     depends_on:
       - database
-    command: celery -A workers.celery worker --loglevel=info -B
     environment:
       DATABASE_URL: postgresql+psycopg2://root:password@database:5432/convert_tool_video
     build:

@@ -21,6 +21,7 @@ app.config['JWT_TIME_EXPIRE'] = int(os.environ.get('JWT_TIME_EXPIRE',1200))
 app.config['JWT_SECRET_KEY'] = os.environ.get("JWT_SECRET_KEY", "JF}]&p1CH4-?-k]")
 
 app_context = app.app_context()
+root_path = app.root_path
 app_context.push()
 
 db.init_app(app)
