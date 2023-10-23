@@ -27,6 +27,7 @@ def sync_sqs_logs(self):
         for task in tasks:
             self.async_app.send_task("upload_task", args=[task.id, task.path_file, task.new_format])
             print(task.id, task.status)
+            session.query(Task).filter_by(id=id).update(dict(status="Processed",path_file_new_format=new_path))
 
         # Cierra la sesión
         session.close()
@@ -37,9 +38,9 @@ def sync_sqs_logs(self):
 @shared_task(name="upload_task")
 def upload_task(id, path_file, new_format):
     path = "batch/convert_video.sh"
-    new_path =  f'{path_file.split(".")[0]}.{new_format}'
+    new_path =  f'{path_file.split(".")[0]}.{(new_format.lower())}'
     arg = f'${path}/{new_path}'
     print("proceso batch")
     subprocess.Popen(["sh", f'{path} {arg}'   ], shell=True)
-    # subprocess.call(f'{path} {path_file} {new_path}')    
+    # subprocess.call(f'{path} {path_file} {new_path}')
     return id
