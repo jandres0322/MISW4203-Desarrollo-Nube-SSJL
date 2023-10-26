@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "ae025248-fc48-40a1-88de-14cbd7dce8ee",
+		"_postman_id": "7ee74414-d497-4cb1-b775-c42dddc6c77b",
 		"name": "Desarrollo en la Nube",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "29550135"
+		"_exporter_id": "12518840"
 	},
 	"item": [
 		{
@@ -36,8 +36,7 @@
 						"auth",
 						"signup"
 					]
-				},
-				"description": "Para crear una cuenta se deben especificar los campos: usuario, correo electrónico y contraseña. El  \ncorreo electrónico debe ser único en la plataforma dado que este se usa para la autenticación de los  \nusuarios en la aplicación."
+				}
 			},
 			"response": []
 		},
@@ -83,8 +82,25 @@
 						"auth",
 						"login"
 					]
-				},
-				"description": "Para iniciar sesión en la aplicación web, el usuario provee el correo electrónico/usuario y la contraseña con la que creó la cuenta de usuario en la aplicación. La aplicación retorna un token de sesión si el usuario se autenticó de forma correcta, de lo contrario indica un error de autenticación y no permite utilizar los recursos de la aplicación."
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Protected Route Example",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/api/example",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"example"
+					]
+				}
 			},
 			"response": []
 		},
@@ -127,8 +143,7 @@
 						"api",
 						"tasks"
 					]
-				},
-				"description": "El usuario debe proveer el archivo que desea convertir, el formato al cual desea cambiarlo y el token de autenticación para realizar dicha operación. El archivo debe ser almacenado en la plataforma, se debe guardar en base datos la marca de tiempo en el que fue subido el archivo y el estado del proceso de conversión (uploaded o processed)."
+				}
 			},
 			"response": []
 		},
@@ -148,29 +163,46 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{BASE_URL}}/api/users/:user_id/tasks",
+					"raw": "{{BASE_URL}}/api/tasks?order=1&max=2",
 					"host": [
 						"{{BASE_URL}}"
 					],
 					"path": [
 						"api",
-						"users",
-						":user_id",
 						"tasks"
 					],
-					"variable": [
+					"query": [
 						{
-							"key": "user_id",
+							"key": "order",
 							"value": "1"
+						},
+						{
+							"key": "max",
+							"value": "2"
 						}
 					]
-				},
-				"description": "Para obtener la información de una tarea de conversión específica. El usuario debe proveer el token de autenticación para realizar dicha operación. Además, el servicio REST (GET) debe permitir recuperar/descargar el archivo que original o el archivo procesado de un usuario, suministrando una URL para cada archivo."
+				}
 			},
 			"response": []
 		},
 		{
 			"name": "Task by id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const responseData = pm.response.json();",
+							"if (responseData.status == \"Uploaded\") {",
+							"    pm.collectionVariables.set(\"PATH_URL_DOWNLOAD\", responseData.url_original_file);",
+							"} else {",
+							"    pm.collectionVariables.set(\"PATH_URL_DOWNLOAD\", responseData.url_processed_file);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"auth": {
 					"type": "bearer",
@@ -185,14 +217,49 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{BASE_URL}}/api/task/1",
+					"raw": "{{BASE_URL}}/api/task/13",
 					"host": [
 						"{{BASE_URL}}"
 					],
 					"path": [
 						"api",
 						"task",
-						"1"
+						"13"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Upload File",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/api/tasks/upload?path={{PATH_URL_DOWNLOAD}}",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"tasks",
+						"upload"
+					],
+					"query": [
+						{
+							"key": "path",
+							"value": "{{PATH_URL_DOWNLOAD}}"
+						}
 					]
 				}
 			},
@@ -227,6 +294,11 @@
 		},
 		{
 			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "PATH_URL_DOWNLOAD",
 			"value": "",
 			"type": "string"
 		}
