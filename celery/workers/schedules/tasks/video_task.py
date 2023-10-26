@@ -4,6 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import importlib
 import subprocess
+import os
 
 @shared_task(name='sync_sqs_logs', bind=True, max_retries=2)
 def sync_sqs_logs(self):
@@ -11,14 +12,14 @@ def sync_sqs_logs(self):
     celery_app = importlib.import_module('workers.celery').celery_app
 
     try:
-        engine = create_engine('postgresql://root:password@database:5432/convert_tool_video')
+        engine = create_engine(os.environ.get('DATABASE_URL', 'postgresql+psycopg2://root:password@database:5432/convert_tool_video'))
 
         # Crea el constructor de sesiones
         Session = sessionmaker(bind=engine)
 
-        # Crea una sesión   
+        # Crea una sesión
         session = Session()
-    
+
         # Realiza la consulta
         tasks = session.query(Task).filter(Task.status == 'Uploaded').all()
 
@@ -27,8 +28,9 @@ def sync_sqs_logs(self):
         for task in tasks:
             self.async_app.send_task("upload_task", args=[task.id, task.path_file, task.new_format])
             print(task.id, task.status)
-            session.query(Task).filter_by(id=id).update(dict(status="Processed",path_file_new_format=new_path))
-
+            new_path = f'{task.path_file.split(".")[0]}.{task.new_format}'
+            session.query(Task).filter_by(id=task.id).update(dict(status="Processed",path_file_new_format=new_path))
+            session.commit()
         # Cierra la sesión
         session.close()
 
@@ -37,10 +39,16 @@ def sync_sqs_logs(self):
 
 @shared_task(name="upload_task")
 def upload_task(id, path_file, new_format):
-    path = "batch/convert_video.sh"
+    path_batch = os.environ.get('BATCH_URL','batch/convert_video.sh')
     new_path =  f'{path_file.split(".")[0]}.{(new_format.lower())}'
-    arg = f'${path}/{new_path}'
-    print("proceso batch")
-    subprocess.Popen(["sh", f'{path} {arg}'   ], shell=True)
-    # subprocess.call(f'{path} {path_file} {new_path}')
+    print("path_batch", path_batch)
+    print("path_file", path_file)
+    print("new_path", new_path)
+    print("Ejecutar proceso Batch")
+    os.system(f'sh {path_batch} {path_file} {new_path}')
+    # p = subprocess.Popen(["sh", f'{path_batch} {path_file} {new_path}'], shell=True, stderr=subprocess.PIPE, wait=True)
+    # stdout, stderr = p.communicate()
+    # print("stdout", stdout)
+    # print("stderr", stderr)
+    print("proceso batch ejecutado")
     return id

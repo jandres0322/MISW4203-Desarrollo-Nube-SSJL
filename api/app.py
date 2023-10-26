@@ -10,15 +10,14 @@ from flask_migrate import Migrate
 from utils import allowed_file, create_user_folder
 from sqlalchemy import desc, asc
 
-UPLOAD_FOLDER = "uploads/videos"
+VOLUME_PATH = os.environ.get('UPLOAD_URL','/uploads/videos')
 app = Flask(__name__)
 migrate = Migrate()
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", "postgresql+psycopg2://test:test@localhost:5432/convert_tool_video")
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql+psycopg2://test:test@localhost:5432/convert_tool_video')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  
 app.config['JWT_TIME_EXPIRE'] = int(os.environ.get('JWT_TIME_EXPIRE',1200))
-app.config['JWT_SECRET_KEY'] = os.environ.get("JWT_SECRET_KEY", "JF}]&p1CH4-?-k]")
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'JF}]&p1CH4-?-k]')
 
 app_context = app.app_context()
 root_path = app.root_path
@@ -144,7 +143,7 @@ def create_task(user):
             }), 400
         )
     filename_secure = secure_filename(file.filename)
-    folder_user  = create_user_folder( app.config['UPLOAD_FOLDER']  ,user.username)
+    folder_user  = create_user_folder( VOLUME_PATH  ,user.username)
     filename_path = os.path.join(folder_user, filename_secure) 
     task = Task.query.filter_by(path_file = filename_path).first()
     if task:

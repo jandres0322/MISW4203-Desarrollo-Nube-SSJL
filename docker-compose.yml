@@ -29,24 +29,39 @@ services:
   celery:
     container_name: celery
     volumes:
-      - .:/api
+      - files:/uploads/videos
+    environment:
+      DATABASE_URL: postgresql+psycopg2://root:password@database:5432/convert_tool_video
+      UPLOAD_URL: /uploads/videos
+      BATCH_URL: /src/app/batch/convert_video.sh
+      CELERY_URL: redis://redis:6379/0
     command: celery -A workers.celery worker --loglevel=info -B
-    build: 
-      context: ./api
+    build:
+      context: ./celery
+    depends_on:
+      - redis
     networks:
       - mynetwork
 
   api:
     container_name: api
     volumes:
-      - .:/api
+      - files:/uploads/videos
     ports:
       - "5000:5000"
     depends_on:
       - database
+      - celery
+      - redis
     environment:
       DATABASE_URL: postgresql+psycopg2://root:password@database:5432/convert_tool_video
+      UPLOAD_URL: /uploads/videos
+      JWT_TIME_EXPIRE: 1200
+      JWT_SECRET_KEY: JF}]&p1CH4-?-k]
     build:
       context: ./api
     networks:
       - mynetwork
+
+volumes:
+  files:
