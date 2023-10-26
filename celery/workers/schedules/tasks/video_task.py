@@ -31,7 +31,6 @@ def sync_sqs_logs(self):
             new_path = f'{task.path_file.split(".")[0]}.{task.new_format}'
             session.query(Task).filter_by(id=task.id).update(dict(status="Processed",path_file_new_format=new_path))
             session.commit()
-        # Cierra la sesión
         session.close()
 
     except Exception as e:
@@ -41,14 +40,5 @@ def sync_sqs_logs(self):
 def upload_task(id, path_file, new_format):
     path_batch = os.environ.get('BATCH_URL','batch/convert_video.sh')
     new_path =  f'{path_file.split(".")[0]}.{(new_format.lower())}'
-    print("path_batch", path_batch)
-    print("path_file", path_file)
-    print("new_path", new_path)
-    print("Ejecutar proceso Batch")
     os.system(f'sh {path_batch} {path_file} {new_path}')
-    # p = subprocess.Popen(["sh", f'{path_batch} {path_file} {new_path}'], shell=True, stderr=subprocess.PIPE, wait=True)
-    # stdout, stderr = p.communicate()
-    # print("stdout", stdout)
-    # print("stderr", stderr)
-    print("proceso batch ejecutado")
     return id

@@ -12,7 +12,7 @@ class User(db.Model):
     password = db.Column(db.String(500))
     email = db.Column(db.String(200))
     tasks = relationship('Task', backref='user', cascade="all, delete-orphan")
-    created = db.Column(db.DateTime(timezone=True), default=datetime.now)                       
+    created = db.Column(db.DateTime(timezone=True), default=datetime.now)
     updated = db.Column(db.DateTime(timezone=True), default=datetime.now, onupdate=datetime.now)
 
 class Task(db.Model):
@@ -23,6 +23,6 @@ class Task(db.Model):
     new_format = db.Column(db.String(250))
     status = db.Column(Enum("Uploaded", "Processed", name="task_status_enum"), default="Uploaded")
     user_id = db.Column(db.Integer, ForeignKey('user.id'))
-    created = db.Column(db.DateTime(timezone=True), default=datetime.now)                       
+    created = db.Column(db.DateTime(timezone=True), default=datetime.now)
     updated = db.Column(db.DateTime(timezone=True), default=datetime.now, onupdate=datetime.now)
 

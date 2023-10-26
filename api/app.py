@@ -8,7 +8,7 @@ import datetime
 import os
 from flask_migrate import Migrate
 from utils import allowed_file, create_user_folder
-from sqlalchemy import desc, asc
+from sqlalchemy import desc, asc, delete
 
 VOLUME_PATH = os.environ.get('UPLOAD_URL','/uploads/videos')
 app = Flask(__name__)
@@ -48,7 +48,7 @@ def token_required(f):
                 'message' : 'El token es invalido'
             }), 401
         return  f(current_user, *args, **kwargs)
-  
+
     return decorated
 
 @app.route('/api/auth/login', methods=['POST'])
@@ -88,7 +88,7 @@ def login_user():
         }),
         200
     )
-    
+
 @app.route('/api/auth/signup', methods=['POST'])
 def register_user():
     data = request.get_json()
@@ -144,7 +144,7 @@ def create_task(user):
         )
     filename_secure = secure_filename(file.filename)
     folder_user  = create_user_folder( VOLUME_PATH  ,user.username)
-    filename_path = os.path.join(folder_user, filename_secure) 
+    filename_path = os.path.join(folder_user, filename_secure)
     task = Task.query.filter_by(path_file = filename_path).first()
     if task:
         return make_response(
@@ -156,7 +156,7 @@ def create_task(user):
     file.save(filename_path)
     task = Task(
         path_file=filename_path,
-        new_format=new_format,
+        new_format=new_format.lower(),
         user_id=user.id
     )
     db.session.add(task)
@@ -171,7 +171,7 @@ def create_task(user):
 @token_required
 def get_user_tasks(user):
     max_tasks = request.args.get('max')
-    order = request.args.get('order') 
+    order = request.args.get('order')
     tasks = Task.query \
                 .filter_by(user_id=user.id) \
                 .order_by( asc(Task.id) if order == '0' else desc(Task.id) )
@@ -215,6 +215,25 @@ def download_file(user):
     path_file_upload = request.args.get('path')
     path, filename = os.path.split(path_file_upload)
     return send_from_directory(path, filename)
+
+@app.route('/api/task/<int:task_id>', methods=['DELETE'])
+@token_required
+def delete_task(user, task_id):
+    task = Task.query.filter_by(id=task_id).first()
+    if not task:
+        return make_response(jsonify({'message': 'Tarea no encontrada'}), 404)
+    path_file = task.path_file
+    path_new_file = task.path_file_new_format
+    os.system(f'rm -rf {path_file}')
+    if path_new_file is not None:
+        os.system(f'rm -rf {path_new_file}')
+    db.session.delete(task)
+    db.session.commit()
+    return make_response(
+        jsonify({
+            'message': 'Tarea eliminada correctamente!'
+        }), 200
+    )
 
 if __name__ == '__main__':
     app.run(
