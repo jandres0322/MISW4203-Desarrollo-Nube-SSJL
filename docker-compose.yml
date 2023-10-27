@@ -1,0 +1,67 @@
+version: '3'
+
+networks:
+  mynetwork:
+    driver: bridge
+
+services:
+
+  redis:
+    image: redis:latest
+    container_name: mi-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - mynetwork
+
+  database:
+    image: postgres:latest
+    container_name: database
+    environment:
+      POSTGRES_DB: convert_tool_video
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    networks:
+      - mynetwork
+
+  celery:
+    container_name: celery
+    volumes:
+      - files:/uploads/videos
+    environment:
+      DATABASE_URL: postgresql+psycopg2://root:password@database:5432/convert_tool_video
+      UPLOAD_URL: /uploads/videos
+      BATCH_URL: /src/app/batch/convert_video.sh
+      CELERY_URL: redis://redis:6379/0
+    command: celery -A workers.celery worker --loglevel=info -B
+    build:
+      context: ./celery
+    depends_on:
+      - redis
+    networks:
+      - mynetwork
+
+  api:
+    container_name: api
+    volumes:
+      - files:/uploads/videos
+    ports:
+      - "5000:5000"
+    depends_on:
+      - database
+      - celery
+      - redis
+    environment:
+      DATABASE_URL: postgresql+psycopg2://root:password@database:5432/convert_tool_video
+      UPLOAD_URL: /uploads/videos
+      JWT_TIME_EXPIRE: 1200
+      JWT_SECRET_KEY: JF}]&p1CH4-?-k]
+    build:
+      context: ./api
+    networks:
+      - mynetwork
+
+volumes:
+  files:

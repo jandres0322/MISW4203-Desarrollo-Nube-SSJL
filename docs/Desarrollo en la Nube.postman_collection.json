@@ -19,7 +19,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"username\": \"jandres0322\",\n    \"password1\": \"1234\",\n    \"password2\": \"1234\",\n    \"email\": \"jandres0322@gmail.com\"\n}",
+					"raw": "{\n    \"username\": \"jandres0322\",\n    \"password1\": \"andres0322\",\n    \"password2\": \"andres0322\",\n    \"email\": \"jandres0322@gmail.com\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -42,6 +42,18 @@
 		},
 		{
 			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const responseData = pm.response.json();",
+							"pm.collectionVariables.set(\"token\", responseData.token);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "POST",
 				"header": [
@@ -53,7 +65,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"username\": \"jandres0322\",\n    \"password\": \"1234\"\n}",
+					"raw": "{\n    \"username\": \"jandres0322\",\n    \"password\": \"andres0322\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -91,6 +103,167 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Create Task",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/home/jhon/Escritorio/mercedes_glk_-_1406 (360p).mp4"
+						},
+						{
+							"key": "new_format",
+							"value": "AVI",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/api/tasks",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"tasks"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Task for user",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/api/tasks?order=1&max=2",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"tasks"
+					],
+					"query": [
+						{
+							"key": "order",
+							"value": "1"
+						},
+						{
+							"key": "max",
+							"value": "2"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Task by id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const responseData = pm.response.json();",
+							"if (responseData.status == \"Uploaded\") {",
+							"    pm.collectionVariables.set(\"PATH_URL_DOWNLOAD\", responseData.url_original_file);",
+							"} else {",
+							"    pm.collectionVariables.set(\"PATH_URL_DOWNLOAD\", responseData.url_processed_file);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/api/task/13",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"task",
+						"13"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Upload File",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/api/tasks/upload?path={{PATH_URL_DOWNLOAD}}",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"tasks",
+						"upload"
+					],
+					"query": [
+						{
+							"key": "path",
+							"value": "{{PATH_URL_DOWNLOAD}}"
+						}
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"event": [
@@ -117,6 +290,16 @@
 		{
 			"key": "BASE_URL",
 			"value": "http://localhost:5000",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "PATH_URL_DOWNLOAD",
+			"value": "",
 			"type": "string"
 		}
 	]
