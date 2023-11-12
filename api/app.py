@@ -9,23 +9,33 @@ import os
 from flask_migrate import Migrate
 from utils import allowed_file, create_user_folder
 from sqlalchemy import desc, asc, delete
+from dotenv import load_dotenv
 
-VOLUME_PATH = os.environ.get('UPLOAD_URL','/uploads/videos')
+load_dotenv()
+
+VOLUME_PATH = os.environ.get('UPLOAD_URL')
 app = Flask(__name__)
 migrate = Migrate()
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql+psycopg2://test:test@localhost:5432/convert_tool_video')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  
-app.config['JWT_TIME_EXPIRE'] = int(os.environ.get('JWT_TIME_EXPIRE',1200))
-app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'JF}]&p1CH4-?-k]')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_ENGINE') + '://' + \
+    os.environ.get('DB_USER') + ':' + \
+    os.environ.get('DB_PASSWORD') + '@' + \
+    os.environ.get('DB_HOST') + ':' + \
+    os.environ.get('DB_PORT') + '/' + \
+    os.environ.get('DB_NAME')
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JWT_TIME_EXPIRE'] = int(os.environ.get('JWT_TIME_EXPIRE'))
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
 
 app_context = app.app_context()
 root_path = app.root_path
 app_context.push()
 
 db.init_app(app)
-migrate.init_app(app,db)
+migrate.init_app(app, db)
 db.create_all()
+
 
 def token_required(f):
     @wraps(f)
@@ -35,21 +45,23 @@ def token_required(f):
             token = request.headers['authorization']
             token = token.split(" ")[1]
         if not token:
-            return jsonify({'message' : 'El token no encontrado'}), 401
+            return jsonify({'message': 'El token no encontrado'}), 401
         print(token)
         try:
-            data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms = ["HS256"])
+            data = jwt.decode(
+                token, app.config['JWT_SECRET_KEY'], algorithms=["HS256"])
             current_user = User.query\
-                .filter_by(username = data['username'])\
+                .filter_by(username=data['username'])\
                 .first()
         except Exception as e:
             print(e)
             return jsonify({
-                'message' : 'El token es invalido'
+                'message': 'El token es invalido'
             }), 401
-        return  f(current_user, *args, **kwargs)
+        return f(current_user, *args, **kwargs)
 
     return decorated
+
 
 @app.route('/api/auth/login', methods=['POST'])
 def login_user():
@@ -61,7 +73,7 @@ def login_user():
             }),
             401
         )
-    user = User.query.filter_by(username = auth.get('username')).first()
+    user = User.query.filter_by(username=auth.get('username')).first()
     if not user:
         return make_response(
             jsonify({
@@ -81,13 +93,15 @@ def login_user():
         'password': auth.get('password'),
         'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=app.config['JWT_TIME_EXPIRE'])
     }
-    token = jwt.encode(payload, app.config['JWT_SECRET_KEY'],algorithm="HS256")
+    token = jwt.encode(
+        payload, app.config['JWT_SECRET_KEY'], algorithm="HS256")
     return make_response(
         jsonify({
             "token": token
         }),
         200
     )
+
 
 @app.route('/api/auth/signup', methods=['POST'])
 def register_user():
@@ -103,7 +117,7 @@ def register_user():
             }),
             400
         )
-    user = User.query.filter_by(email = email).first()
+    user = User.query.filter_by(email=email).first()
     if user:
         return make_response(
             jsonify({
@@ -112,9 +126,9 @@ def register_user():
             400
         )
     user = User(
-        username = username,
-        password = generate_password_hash(password1),
-        email = email
+        username=username,
+        password=generate_password_hash(password1),
+        email=email
     )
     db.session.add(user)
     db.session.commit()
@@ -124,6 +138,7 @@ def register_user():
         }),
         201
     )
+
 
 @app.route('/api/tasks', methods=['POST'])
 @token_required
@@ -143,9 +158,9 @@ def create_task(user):
             }), 400
         )
     filename_secure = secure_filename(file.filename)
-    folder_user  = create_user_folder( VOLUME_PATH  ,user.username)
+    folder_user = create_user_folder(VOLUME_PATH, user.username)
     filename_path = os.path.join(folder_user, filename_secure)
-    task = Task.query.filter_by(path_file = filename_path).first()
+    task = Task.query.filter_by(path_file=filename_path).first()
     if task:
         return make_response(
             jsonify({
@@ -167,6 +182,7 @@ def create_task(user):
         }), 201
     )
 
+
 @app.route('/api/tasks', methods=['GET'])
 @token_required
 def get_user_tasks(user):
@@ -174,7 +190,7 @@ def get_user_tasks(user):
     order = request.args.get('order')
     tasks = Task.query \
                 .filter_by(user_id=user.id) \
-                .order_by( asc(Task.id) if order == '0' else desc(Task.id) )
+                .order_by(asc(Task.id) if order == '0' else desc(Task.id))
     if max_tasks:
         tasks = tasks.limit(max_tasks).all()
     tasks_list = [
@@ -194,12 +210,13 @@ def get_user_tasks(user):
         }), 200
     )
 
+
 @app.route('/api/task/<int:task_id>', methods=['GET'])
 @token_required
 def get_task_by_id(user, task_id):
     task = Task.query.filter_by(id=task_id).first()
     if not task:
-         return make_response(jsonify({'message': 'Tarea no encontrada'}), 404)
+        return make_response(jsonify({'message': 'Tarea no encontrada'}), 404)
     return make_response(
         jsonify({
             'url_original_file': task.path_file,
@@ -209,12 +226,14 @@ def get_task_by_id(user, task_id):
         }), 200
     )
 
+
 @app.route('/api/tasks/upload', methods=['GET'])
 @token_required
 def download_file(user):
     path_file_upload = request.args.get('path')
     path, filename = os.path.split(path_file_upload)
     return send_from_directory(path, filename)
+
 
 @app.route('/api/task/<int:task_id>', methods=['DELETE'])
 @token_required
@@ -235,8 +254,9 @@ def delete_task(user, task_id):
         }), 200
     )
 
+
 if __name__ == '__main__':
     app.run(
         host='0.0.0.0',
-        port=int(os.environ.get('PORT', 5000))
+        port=int(os.environ.get('PORT'))
     )
