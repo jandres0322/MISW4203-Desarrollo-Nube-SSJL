@@ -10,8 +10,11 @@ from flask_migrate import Migrate
 from utils import allowed_file, create_user_folder
 from sqlalchemy import desc, asc, delete
 from dotenv import load_dotenv
+from google.cloud import storage
 
 load_dotenv()
+client = storage.Client()
+bucket_name = os.environ.get('BUCKET_NAME_STORAGE', 'bucketfileserver' )
 
 VOLUME_PATH = os.environ.get('UPLOAD_URL')
 app = Flask(__name__)
@@ -158,8 +161,8 @@ def create_task(user):
             }), 400
         )
     filename_secure = secure_filename(file.filename)
-    folder_user = create_user_folder(VOLUME_PATH, user.username)
-    filename_path = os.path.join(folder_user, filename_secure)
+    folder_user = create_user_folder(client.get_bucket(bucket_name), user.username)
+    filename_path = f'{folder_user}{filename_secure}'
     task = Task.query.filter_by(path_file=filename_path).first()
     if task:
         return make_response(
@@ -168,7 +171,8 @@ def create_task(user):
             }),
             400
         )
-    file.save(filename_path)
+    blob = client.get_bucket(bucket_name).blob(filename_path)
+    blob.upload_from_file(file)
     task = Task(
         path_file=filename_path,
         new_format=new_format.lower(),
