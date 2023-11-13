@@ -58,7 +58,7 @@ def upload_task(id,path_file, new_format):
     local_filename = f'/tmp/{path_file}'
     if not os.path.exists(local_filename):
         print("no existe la carpeta")
-        os.makedirs(local_filename.split("/")[0])
+        os.makedirs(path_file.split("/")[0])
     blob.download_to_filename(local_filename)
     new_path = f'{path_file.split(".")[0]}.{new_format.lower()}'
     subprocess.run(['ffmpeg', '-i', local_filename, '-c:v', 'libx264', '-c:a', 'aac', new_path])
