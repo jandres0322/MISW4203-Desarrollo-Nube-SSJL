@@ -6,9 +6,12 @@ import importlib
 import subprocess
 import os
 from dotenv import load_dotenv
+from google.cloud import storage
 
 load_dotenv()
 
+client = storage.Client()
+bucket_name = os.environ.get('BUCKET_NAME_STORAGE', 'bucketfileserver' )
 
 @shared_task(name='sync_sqs_logs', bind=True, max_retries=2)
 def sync_sqs_logs(self):
@@ -37,8 +40,7 @@ def sync_sqs_logs(self):
         # Imprime los resultados
         self.async_app = celery_app
         for task in tasks:
-            self.async_app.send_task("upload_task", args=[
-                                     task.id, task.path_file, task.new_format])
+            self.async_app.send_task("upload_task", args=[task.path_file, task.new_format])
             print(task.id, task.status)
             new_path = f'{task.path_file.split(".")[0]}.{task.new_format}'
             session.query(Task).filter_by(id=task.id).update(
@@ -51,8 +53,13 @@ def sync_sqs_logs(self):
 
 
 @shared_task(name="upload_task")
-def upload_task(id, path_file, new_format):
-    path_batch = os.environ.get('BATCH_URL')
-    new_path = f'{path_file.split(".")[0]}.{(new_format.lower())}'
-    os.system(f'sh {path_batch} {path_file} {new_path}')
-    return id
+def upload_task(path_file, new_format):
+    blob = client.get_bucket(bucket_name).blob(path_file)
+    local_filename = f'/tmp/{path_file}'
+    blob.download_to_filename(local_filename)
+    new_path = f'{path_file.split(".")[0]}.{new_format.lower()}'
+    subprocess.run(['ffmpeg', '-i', local_filename, '-c:v', 'libx264', '-c:a', 'aac', new_path])
+    new_blob = client.get_bucket(bucket_name).blob(new_path)
+    new_blob.upload_from_filename(new_path)
+
+    os.remove(local_filename)
