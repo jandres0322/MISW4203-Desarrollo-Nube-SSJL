@@ -43,9 +43,9 @@ def sync_sqs_logs(self):
             self.async_app.send_task("upload_task", args=[task.id, task.path_file, task.new_format])
             print(task.id, task.status)
             new_path = f'{task.path_file.split(".")[0]}.{task.new_format}'
-            # session.query(Task).filter_by(id=task.id).update(
-            #     dict(status="Processed", path_file_new_format=new_path))
-            # session.commit()
+            session.query(Task).filter_by(id=task.id).update(
+                dict(status="Processed", path_file_new_format=new_path))
+            session.commit()
         session.close()
 
     except Exception as e:
