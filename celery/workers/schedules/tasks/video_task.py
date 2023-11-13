@@ -40,12 +40,12 @@ def sync_sqs_logs(self):
         # Imprime los resultados
         self.async_app = celery_app
         for task in tasks:
-            self.async_app.send_task("upload_task", args=[task.path_file, task.new_format])
+            self.async_app.send_task("upload_task", args=[task.id, task.path_file, task.new_format])
             print(task.id, task.status)
             new_path = f'{task.path_file.split(".")[0]}.{task.new_format}'
-            session.query(Task).filter_by(id=task.id).update(
-                dict(status="Processed", path_file_new_format=new_path))
-            session.commit()
+            # session.query(Task).filter_by(id=task.id).update(
+            #     dict(status="Processed", path_file_new_format=new_path))
+            # session.commit()
         session.close()
 
     except Exception as e:
@@ -53,7 +53,7 @@ def sync_sqs_logs(self):
 
 
 @shared_task(name="upload_task")
-def upload_task(path_file, new_format):
+def upload_task(id,path_file, new_format):
     blob = client.get_bucket(bucket_name).blob(path_file)
     local_filename = f'/tmp/{path_file}'
     blob.download_to_filename(local_filename)
@@ -63,3 +63,4 @@ def upload_task(path_file, new_format):
     new_blob.upload_from_filename(new_path)
 
     os.remove(local_filename)
+    return id
