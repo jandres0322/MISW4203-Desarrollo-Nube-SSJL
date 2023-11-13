@@ -241,7 +241,7 @@ def download_file(user):
 
 @app.route('/api/task/<int:task_id>', methods=['DELETE'])
 @token_required
-def delete_task(task_id):
+def delete_task(user, task_id):
     task = Task.query.filter_by(id=task_id).first()
     if not task:
         return make_response(jsonify({'message': 'Tarea no encontrada'}), 404)
