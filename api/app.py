@@ -7,7 +7,7 @@ import jwt
 import datetime
 import os
 from flask_migrate import Migrate
-from utils import allowed_file, create_user_folder
+from utils import allowed_file, create_user_folder, delete_file_cloud_storage
 from sqlalchemy import desc, asc, delete
 from dotenv import load_dotenv
 from google.cloud import storage
@@ -241,15 +241,17 @@ def download_file(user):
 
 @app.route('/api/task/<int:task_id>', methods=['DELETE'])
 @token_required
-def delete_task(user, task_id):
+def delete_task(task_id):
     task = Task.query.filter_by(id=task_id).first()
     if not task:
         return make_response(jsonify({'message': 'Tarea no encontrada'}), 404)
     path_file = task.path_file
     path_new_file = task.path_file_new_format
-    os.system(f'rm -rf {path_file}')
+    # Elimina el archivo original
+    bucket = client.get_bucket(bucket_name)
+    delete_file_cloud_storage(path_file, bucket)
     if path_new_file is not None:
-        os.system(f'rm -rf {path_new_file}')
+        delete_file_cloud_storage(path_new_file, bucket)
     db.session.delete(task)
     db.session.commit()
     return make_response(

@@ -20,3 +20,13 @@ def validate_folder_exists(bucket, carpeta_path):
         return True
     except NotFound:
         return False
+
+def delete_file_cloud_storage(archivo_path, bucket):
+    blob = bucket.blob(archivo_path)
+
+    try:
+        blob.delete()
+        return True
+    except Exception as e:
+        print(f"Error al eliminar el archivo {archivo_path}: {e}")
+        return False
