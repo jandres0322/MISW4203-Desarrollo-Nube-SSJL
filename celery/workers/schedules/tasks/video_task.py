@@ -56,13 +56,16 @@ def sync_sqs_logs(self):
 def upload_task(id,path_file, new_format):
     blob = client.get_bucket(bucket_name).blob(path_file)
     local_filename = f'/tmp/{path_file}'
-    if not os.path.exists(f'/tmp/{path_file.split("/")[0]}'):
+    local_folder = f'/tmp/{path_file.split("/")[0]}'
+    if not os.path.exists(local_folder):
         print("no existe la carpeta")
-        os.makedirs(f'/tmp/{path_file.split("/")[0]}')
+        os.makedirs(local_folder)
     blob.download_to_filename(local_filename)
-    new_path = f'{path_file.split(".")[0]}.{new_format.lower()}'
+    path_without_extension = path_file.split(".")[0]
+    new_path = f'/tmp/{path_without_extension}.{new_format.lower()}'
     subprocess.run(['ffmpeg', '-i', local_filename, '-c:v', 'libx264', '-c:a', 'aac', new_path])
-    new_blob = client.get_bucket(bucket_name).blob(new_path)
+    new_file_bucket = f'{path_without_extension}.{new_format.lower()}'
+    new_blob = client.get_bucket(bucket_name).blob(new_file_bucket)
     new_blob.upload_from_filename(new_path)
 
     os.remove(local_filename)
