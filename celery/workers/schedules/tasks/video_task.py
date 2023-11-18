@@ -44,7 +44,7 @@ def sync_sqs_logs(self):
         subscription_path = subscriber.subscription_path(topic_path, subscription=subscription)
 
         while True:
-            response = subscriber.pull(subscription_path, max_messages = 5)
+            response = subscriber.pull(subscription=subscription_path, max_messages = 5)
             received_messages = response.received_messages
 
             if not received_messages:
@@ -71,7 +71,6 @@ def sync_sqs_logs(self):
                 ack_ids = [received_message.ack_id]
                 subscriber.acknowledge(subscription_path, ack_ids)
         session.close()
-
     except Exception as e:
         raise self.retry(exc=e)
 
