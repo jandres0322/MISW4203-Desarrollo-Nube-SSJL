@@ -39,9 +39,7 @@ def sync_sqs_logs(self):
         session = Session()
 
         # Realiza la consulta al pub/sub
-        topic_path = "projects/misw4203-desarrollo-nube-05/topics/cloud-converter-topic"
-        subscription = "projects/misw4203-desarrollo-nube-05/subscriptions/converter-sub"
-        subscription_path = subscriber.subscription_path(topic_path, subscription=subscription)
+        subscription_path = subscriber.subscription_path('misw4203-desarrollo-nube-05', 'converter-sub')
 
         while True:
             response = subscriber.pull(subscription=subscription_path, max_messages = 5)
