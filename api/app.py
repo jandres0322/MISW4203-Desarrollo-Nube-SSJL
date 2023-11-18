@@ -184,7 +184,7 @@ def create_task(user):
     db.session.add(task)
     db.session.commit()
 
-    topic_path = "projects/misw4203-desarrollo-nube-05/topics/cloud-converter-topic"
+    
     message_data = {
         'id': task.id,
         'new_format': new_format.lower(),
@@ -192,6 +192,7 @@ def create_task(user):
         'status': task.status
     }
     message_data_str = json.dumps(message_data)
+    topic_path = publisher.topic_path('misw4203-desarrollo-nube-05', 'cloud-converter-topic')        
     future = publisher.publish(topic_path, data=message_data_str.encode('utf-8'))
     print(f"published message id {future.result()}")
 
