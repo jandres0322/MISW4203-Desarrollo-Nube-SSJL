@@ -7,8 +7,12 @@ import subprocess
 import os
 from dotenv import load_dotenv
 from google.cloud import storage
+from google.cloud import pubsub_v1
+import json
 
 load_dotenv()
+
+subscriber = pubsub_v1.SubscriberClient()
 
 client = storage.Client()
 bucket_name = os.environ.get('BUCKET_NAME_STORAGE', 'bucketfileserver' )
@@ -34,18 +38,37 @@ def sync_sqs_logs(self):
         # Crea una sesión
         session = Session()
 
-        # Realiza la consulta
-        tasks = session.query(Task).filter(Task.status == 'Uploaded').all()
+        # Realiza la consulta al pub/sub
+        topic_path = "projects/misw4203-desarrollo-nube-05/topics/cloud-converter-topic"
+        subscription_path = subscriber.subscription_path(topic_path)
 
-        # Imprime los resultados
-        self.async_app = celery_app
-        for task in tasks:
-            self.async_app.send_task("upload_task", args=[task.id, task.path_file, task.new_format])
-            print(task.id, task.status)
-            new_path = f'{task.path_file.split(".")[0]}.{task.new_format}'
-            session.query(Task).filter_by(id=task.id).update(
-                dict(status="Processed", path_file_new_format=new_path))
-            session.commit()
+        while True:
+            response = subscriber.pull(subscription_path, max_messages = 5)
+            received_messages = response.received_messages
+
+            if not received_messages:
+                break
+
+            for received_message in received_messages:
+                message_data_str = received_message.message.data.decode("utf-8")
+                message_data = json.loads(message_data_str)
+
+                id = message_data["id"]
+                new_format = message_data["new_format"]
+                file_path = message_data["file_path"]
+                status = message_data["status"]
+
+                # Imprime los resultados
+                self.async_app.send_task("upload_task", args=[id, file_path, new_format])
+                print(id, status)
+                new_path = f'{file_path.split(".")[0]}.{new_format}'
+                session.query(Task).filter_by(id=id, status='Uploaded').update(
+                    dict(status="Processed", path_file_new_format=new_path)
+                )
+                session.commit()
+
+                ack_ids = [received_message.ack_id]
+                subscriber.acknowledge(subscription_path, ack_ids)
         session.close()
 
     except Exception as e:

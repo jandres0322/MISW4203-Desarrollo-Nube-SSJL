@@ -10,11 +10,13 @@ from flask_migrate import Migrate
 from utils import allowed_file, create_user_folder, delete_file_cloud_storage
 from sqlalchemy import desc, asc, delete
 from dotenv import load_dotenv
-from google.cloud import storage
+from google.cloud import pubsub_v1
+import json
 
 load_dotenv()
-client = storage.Client()
 bucket_name = os.environ.get('BUCKET_NAME_STORAGE', 'bucketfileserver' )
+
+publisher = pubsub_v1.PublisherClient()
 
 VOLUME_PATH = os.environ.get('UPLOAD_URL')
 app = Flask(__name__)
@@ -173,6 +175,7 @@ def create_task(user):
         )
     blob = client.get_bucket(bucket_name).blob(filename_path)
     blob.upload_from_file(file)
+
     task = Task(
         path_file=filename_path,
         new_format=new_format.lower(),
@@ -180,6 +183,18 @@ def create_task(user):
     )
     db.session.add(task)
     db.session.commit()
+
+    topic_path = "projects/misw4203-desarrollo-nube-05/topics/cloud-converter-topic"
+    message_data = {
+        'id': task.id,
+        'new_format': new_format.lower(),
+        'file_path': filename_path,
+        'status': task.status
+    }
+    message_data_str = json.dumps(message_data)
+    future = publisher.publish(topic_path, data=message_data_str.encode('utf-8'))
+    print(f"published message id {future.result()}")
+
     return make_response(
         jsonify({
             'message': 'Tarea creada correctamente!'
