@@ -10,9 +10,11 @@ from flask_migrate import Migrate
 from utils import allowed_file, create_user_folder, delete_file_cloud_storage
 from sqlalchemy import desc, asc, delete
 from dotenv import load_dotenv
+from google.cloud import storage
 from google.cloud import pubsub_v1
 import json
 
+client = storage.Client()
 load_dotenv()
 bucket_name = os.environ.get('BUCKET_NAME_STORAGE', 'bucketfileserver' )
 
