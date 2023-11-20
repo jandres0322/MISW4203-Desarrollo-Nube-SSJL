@@ -45,6 +45,7 @@ def sync_sqs_logs(self):
             response = subscriber.pull(subscription=subscription_path, max_messages = 5)
             print(response)
             received_messages = response.received_messages
+            print(received_messages)
 
             if not received_messages:
                 break
