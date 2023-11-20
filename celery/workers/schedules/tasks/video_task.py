@@ -92,4 +92,5 @@ def upload_task(id,path_file, new_format):
     new_blob.upload_from_filename(new_path)
 
     os.remove(local_filename)
+    os.remove(new_path)
     return id
