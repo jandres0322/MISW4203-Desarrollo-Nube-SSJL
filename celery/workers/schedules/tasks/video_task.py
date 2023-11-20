@@ -43,11 +43,13 @@ def sync_sqs_logs(self):
 
         while True:
             response = subscriber.pull(subscription=subscription_path, max_messages = 5)
+            print(response)
             received_messages = response.received_messages
+            print(received_messages)
 
             if not received_messages:
                 break
-
+            self.async_app = celery_app
             for received_message in received_messages:
                 message_data_str = received_message.message.data.decode("utf-8")
                 message_data = json.loads(message_data_str)
