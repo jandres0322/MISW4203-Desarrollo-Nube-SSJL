@@ -3,8 +3,9 @@ from sqlalchemy import Enum, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from datetime import datetime
+from utils import connect_tcp_socket
 
-db = SQLAlchemy()
+db = connect_tcp_socket()
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
